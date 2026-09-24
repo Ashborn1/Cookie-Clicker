@@ -2,7 +2,7 @@
 
 A Cookie Clicker–style incremental game with a level-based skill tree.
 
-**[Play it here](https://YOUR_USERNAME.github.io/cookie-empire/)**
+**[Play it here](https://ashborn1.github.io/Cookie-Clicker/)**
 
 ## Features
 - Leveled upgrades (each skill goes up to 10)
