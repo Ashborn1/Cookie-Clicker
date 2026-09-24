@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>Cookie Empire</title>
 <link rel="stylesheet" href="style.css">
 </head>
@@ -22,7 +22,14 @@
     </div>
 
     <div class="cookie-wrap">
-      <button class="cookie" id="cookie" aria-label="Bake a cookie"></button>
+      <button class="cookie" id="cookie" aria-label="Bake a cookie" tabindex="-1"></button>
+    </div>
+
+    <div class="bakery-scene" id="bakeryScene">
+      <div class="bakery-label">Your Bakery</div>
+      <div class="bakery-items" id="bakeryItems">
+        <span class="bakery-empty">Buy a building to fill your bakery</span>
+      </div>
     </div>
 
     <div class="stats">
@@ -53,7 +60,7 @@
 </div>
 
 <!-- golden cookie -->
-<button class="golden-cookie" id="goldenCookie" aria-label="Golden cookie">🍪</button>
+<button class="golden-cookie" id="goldenCookie" aria-label="Golden cookie" tabindex="-1">🍪</button>
 
 <!-- tooltip -->
 <div class="tooltip" id="tooltip"></div>
