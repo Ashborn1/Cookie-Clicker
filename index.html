@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cookie Empire</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app">
+  <!-- ============ BAKER PANEL ============ -->
+  <section class="panel baker">
+    <div class="head">
+      <h1>Cookie Empire</h1>
+      <button class="ghost" id="reset" title="Reset progress">↺</button>
+    </div>
+
+    <div class="count-wrap">
+      <div class="count" id="count">0</div>
+      <div class="sub">cookies</div>
+    </div>
+
+    <div class="cookie-wrap">
+      <button class="cookie" id="cookie" aria-label="Bake a cookie"></button>
+    </div>
+
+    <div class="stats">
+      <div class="pill"><span id="cps">0</span> / sec</div>
+      <div class="pill">+<span id="cpk">1</span> / click</div>
+    </div>
+    <div class="stats">
+      <div class="pill green">Total: <span id="total">0</span></div>
+      <div class="pill">Clicks: <span id="clicks">0</span></div>
+    </div>
+    <div class="stats" id="synRow" style="display:none">
+      <div class="pill green">✨ Synergy: +<span id="synVal">0</span> / click</div>
+    </div>
+  </section>
+
+  <!-- ============ SKILL TREE PANEL ============ -->
+  <section class="panel tree-panel">
+    <div class="head">
+      <h2>Skill Tree</h2>
+      <span class="hint">Hover / hold a node for details</span>
+    </div>
+    <div class="tree-scroll" id="treeScroll">
+      <div class="tree" id="tree">
+        <svg class="lines" id="lines" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- golden cookie -->
+<button class="golden-cookie" id="goldenCookie" aria-label="Golden cookie">🍪</button>
+
+<!-- tooltip -->
+<div class="tooltip" id="tooltip"></div>
+
+<!-- floaters / toasts -->
+<div class="floaters" id="floaters"></div>
+<div class="toasts" id="toasts"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
