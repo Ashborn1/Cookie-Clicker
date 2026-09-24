@@ -2,7 +2,6 @@
    1. DATA
    ============================================================ */
 const SKILLS = [
-  /* ---------- CLICK BRANCH ---------- */
   { id:'finger', icon:'👆', name:'Strong Finger', branch:'click',
     cost:10, costMult:1.35, maxLevel:10, req:[], lineFrom:null, x:14, y:8,
     effect:{ type:'click_add', value:1 }, desc:'+1 per click',
@@ -28,7 +27,6 @@ const SKILLS = [
     effect:{ type:'click_mult', value:5 }, desc:'Click ×5',
     flavor:'Ruler of the click. Feared by ovens everywhere.' },
 
-  /* ---------- CPS BRANCH ---------- */
   { id:'cursor', icon:'🖱️', name:'Cursor', branch:'cps',
     cost:15, costMult:1.35, maxLevel:10, req:[], lineFrom:null, x:86, y:8,
     effect:{ type:'cps_add', value:0.1 }, desc:'+0.1 / sec',
@@ -64,7 +62,6 @@ const SKILLS = [
     effect:{ type:'cps_add', value:3000 }, desc:'+3000 / sec',
     flavor:'Ancient cookie wisdom flows through its halls. Also: free samples.' },
 
-  /* ---------- SYNERGY BRANCH ---------- */
   { id:'clicksyn', icon:'⚡', name:'Click Synergy', branch:'syn',
     cost:8000, costMult:1.7, maxLevel:5,
     req:[{id:'mouse',level:3},{id:'grandma',level:3}], lineFrom:'mouse', x:50, y:22,
@@ -90,6 +87,17 @@ const SKILLS = [
     flavor:'Diamonds are a cookie’s best friend. And yours, if you can afford it.' },
 ];
 
+const BUILDINGS = [
+  { id:'cursor',  icon:'🖱️' },
+  { id:'grandma', icon:'👵' },
+  { id:'farm',    icon:'🌾' },
+  { id:'factory', icon:'🏭' },
+  { id:'mine',    icon:'⛏️' },
+  { id:'bank',    icon:'🏦' },
+  { id:'temple',  icon:'🏛️' },
+];
+const MAX_ICONS = 40;
+
 const CHIPS = [
   {x:30,y:26,s:26},{x:62,y:22,s:20},{x:46,y:47,s:29},
   {x:72,y:56,s:22},{x:26,y:62,s:24},{x:55,y:74,s:20},
@@ -107,7 +115,6 @@ let state = {
   total: 0,
   clicks: 0,
   levels: {},
-  // derived
   clickPower: 1,
   cps: 0,
   clickSyn: 0
@@ -117,24 +124,25 @@ let state = {
    3. DOM
    ============================================================ */
 const $ = id => document.getElementById(id);
-const countEl    = $('count');
-const cpsEl      = $('cps');
-const cpkEl      = $('cpk');
-const totalEl    = $('total');
-const clicksEl   = $('clicks');
-const synRow     = $('synRow');
-const synValEl   = $('synVal');
-const cookieEl   = $('cookie');
-const treeEl     = $('tree');
-const treeScroll = $('treeScroll');
-const linesEl    = $('lines');
-const floatersEl = $('floaters');
-const toastsEl   = $('toasts');
-const goldenEl   = $('goldenCookie');
-const tooltipEl  = $('tooltip');
+const countEl     = $('count');
+const cpsEl       = $('cps');
+const cpkEl       = $('cpk');
+const totalEl     = $('total');
+const clicksEl    = $('clicks');
+const synRow      = $('synRow');
+const synValEl    = $('synVal');
+const cookieEl    = $('cookie');
+const treeEl      = $('tree');
+const treeScroll  = $('treeScroll');
+const linesEl     = $('lines');
+const floatersEl  = $('floaters');
+const toastsEl    = $('toasts');
+const goldenEl    = $('goldenCookie');
+const tooltipEl   = $('tooltip');
+const bakeryItems = $('bakeryItems');
 
 /* ============================================================
-   4. UTILITIES
+   4. FORMATTERS
    ============================================================ */
 function fmt(n){
   if (n < 1e6) return Math.floor(n).toLocaleString('en-US');
@@ -144,7 +152,8 @@ function fmt(n){
 }
 function fmtShort(n){
   if (n === 0) return '0';
-  if (n < 100) return (Math.round(n * 10) / 10).toString();
+  if (n < 10)   return (Math.round(n * 100) / 100).toString();
+  if (n < 1000) return (Math.round(n * 10)  / 10 ).toString();
   return fmt(n);
 }
 function fmtNum(v){
@@ -203,12 +212,12 @@ function recalcStats(){
     if (lv === 0) continue;
     const e = s.effect;
     switch(e.type){
-      case 'click_add':     clickAdd  += e.value * lv; break;
-      case 'click_mult':    clickMult *= Math.pow(e.value, lv); break;
-      case 'cps_add':       cpsBase   += e.value * lv; break;
-      case 'cps_mult':      cpsMult   *= Math.pow(e.value, lv); break;
-      case 'click_syn':     clickSyn  += e.value * lv; break;
-      case 'cps_syn_cursor':cursorSyn += e.value * lv; break;
+      case 'click_add':      clickAdd  += e.value * lv; break;
+      case 'click_mult':     clickMult *= Math.pow(e.value, lv); break;
+      case 'cps_add':        cpsBase   += e.value * lv; break;
+      case 'cps_mult':       cpsMult   *= Math.pow(e.value, lv); break;
+      case 'click_syn':      clickSyn  += e.value * lv; break;
+      case 'cps_syn_cursor': cursorSyn += e.value * lv; break;
     }
     if (s.id === 'cursor') cursorLevel = lv;
   }
@@ -221,7 +230,6 @@ function recalcStats(){
 /* ============================================================
    6. BUILD UI
    ============================================================ */
-// cookie chips
 for (let i = 0; i < CHIPS.length; i++){
   const c = CHIPS[i];
   const chip = document.createElement('span');
@@ -233,10 +241,9 @@ for (let i = 0; i < CHIPS.length; i++){
   cookieEl.appendChild(chip);
 }
 
-// skill nodes
-const nodeEls  = {};
+const nodeEls   = {};
 const nodeCache = {};
-const lineEls  = [];
+const lineEls   = [];
 
 for (let i = 0; i < SKILLS.length; i++){
   const s = SKILLS[i];
@@ -258,7 +265,6 @@ for (let i = 0; i < SKILLS.length; i++){
   nodeEls[s.id] = el;
 }
 
-// tree lines
 for (let i = 0; i < SKILLS.length; i++){
   const s = SKILLS[i];
   if (!s.lineFrom) continue;
@@ -271,10 +277,71 @@ for (let i = 0; i < SKILLS.length; i++){
   line.dataset.to = s.id;
   linesEl.appendChild(line);
   lineEls.push(line);
+       }
+/* ============================================================
+   7. BAKERY SCENE
+   ============================================================ */
+let lastBakeryKey = '';
+let lastBakeryCount = 0;
+
+function updateBakery(){
+  let key = '';
+  let totalOwned = 0;
+  for (let i = 0; i < BUILDINGS.length; i++){
+    const lv = state.levels[BUILDINGS[i].id] || 0;
+    key += lv + ',';
+    totalOwned += lv;
+  }
+  if (key === lastBakeryKey) return;
+  lastBakeryKey = key;
+
+  bakeryItems.innerHTML = '';
+  if (totalOwned === 0){
+    const empty = document.createElement('span');
+    empty.className = 'bakery-empty';
+    empty.textContent = 'Buy a building to fill your bakery';
+    bakeryItems.appendChild(empty);
+    lastBakeryCount = 0;
+    return;
+  }
+
+  let shown = 0;
+  const isFirstRender = lastBakeryCount === 0;
+
+  for (let i = 0; i < BUILDINGS.length; i++){
+    const b = BUILDINGS[i];
+    const lv = state.levels[b.id] || 0;
+    if (lv === 0) continue;
+
+    const count = Math.min(lv, MAX_ICONS - shown);
+    for (let k = 0; k < count; k++){
+      const el = document.createElement('span');
+      el.className = 'bakery-item';
+      if (!isFirstRender && shown >= lastBakeryCount){
+        el.classList.add('new');
+      }
+      el.textContent = b.icon;
+      el.style.setProperty('--delay', (Math.random() * 2.5).toFixed(2) + 's');
+      el.style.setProperty('--rot',   (Math.random() * 16 - 8).toFixed(1) + 'deg');
+      bakeryItems.appendChild(el);
+      shown++;
+      if (shown >= MAX_ICONS) break;
+    }
+    if (shown >= MAX_ICONS) break;
+  }
+
+  if (totalOwned > MAX_ICONS){
+    const more = document.createElement('span');
+    more.className = 'bakery-item bakery-more';
+    more.textContent = '+' + (totalOwned - MAX_ICONS);
+    bakeryItems.appendChild(more);
+  }
+
+  lastBakeryCount = shown;
 }
 
 /* ============================================================
-   7. TREE RENDER
+   8. TREE RENDER
    ============================================================ */
 function updateNode(s){
   const node = nodeEls[s.id];
@@ -324,7 +391,7 @@ function updateTree(){
 }
 
 /* ============================================================
-   8. THRESHOLD
+   9. THRESHOLD
    ============================================================ */
 let nextThreshold = Infinity;
 function computeNextThreshold(){
@@ -341,7 +408,7 @@ function computeNextThreshold(){
 }
 
 /* ============================================================
-   9. PURCHASE
+   10. PURCHASE
    ============================================================ */
 function buy(id){
   const s = SKILLS.find(k => k.id === id);
@@ -374,15 +441,13 @@ function buy(id){
 
   nodeCache[id] = null;
   updateTree();
+  updateBakery();
 
-  // refresh tooltip if this node is being hovered
   if (tooltipSkill && tooltipSkill.id === id) refreshTooltip();
-
   save();
 }
-
 /* ============================================================
-   10. TOOLTIP
+   11. TOOLTIP
    ============================================================ */
 let tooltipNode  = null;
 let tooltipSkill = null;
@@ -418,9 +483,7 @@ function tooltipHTML(s){
     html += '<div class="tt-req' + (affordable ? ' ready' : '') + '">🍪 ' + fmt(cost) + ' cookies</div>';
   }
 
-  if (s.flavor){
-    html += '<div class="tt-flavor">' + s.flavor + '</div>';
-  }
+  if (s.flavor) html += '<div class="tt-flavor">' + s.flavor + '</div>';
   return html;
 }
 
@@ -440,13 +503,8 @@ function positionTooltip(node){
 
   let left = r.left + r.width / 2 - tw / 2;
   let top  = r.top - th - 12;
-
-  // Not enough room above → place below
   if (top < 8) top = r.bottom + 12;
-  // If still off-screen (bottom), clamp
   if (top + th > vh - 8) top = Math.max(8, vh - th - 8);
-
-  // Clamp horizontally
   left = Math.max(8, Math.min(left, vw - tw - 8));
 
   tooltipEl.style.left = left + 'px';
@@ -469,7 +527,6 @@ function hideTooltip(){
   tooltipSkill = null;
 }
 
-// Desktop hover
 if (window.matchMedia('(hover: hover)').matches){
   treeEl.addEventListener('mouseover', e => {
     const node = e.target.closest('.node');
@@ -481,7 +538,6 @@ if (window.matchMedia('(hover: hover)').matches){
   });
 }
 
-// Mobile long-press
 let pressTimer = null;
 let suppressClick = false;
 
@@ -502,16 +558,13 @@ treeEl.addEventListener('touchend', () => {
   }
 }, { passive: true });
 
-treeEl.addEventListener('touchmove', () => {
-  clearTimeout(pressTimer);
-}, { passive: true });
+treeEl.addEventListener('touchmove', () => clearTimeout(pressTimer), { passive: true });
 
-// Hide on scroll / resize
 treeScroll.addEventListener('scroll', hideTooltip, { passive: true });
 window.addEventListener('resize', hideTooltip);
 
 /* ============================================================
-   11. CLICKING
+   12. CLICKING
    ============================================================ */
 let displayedCookies = -1;
 
@@ -572,7 +625,6 @@ cookieEl.addEventListener('click', e => {
   );
 });
 
-// tree click (delegated)
 treeEl.addEventListener('click', e => {
   if (suppressClick) return;
   const node = e.target.closest('.node');
@@ -581,7 +633,7 @@ treeEl.addEventListener('click', e => {
 });
 
 /* ============================================================
-   12. GOLDEN COOKIE
+   13. GOLDEN COOKIE
    ============================================================ */
 let goldenTimer  = 0;
 let goldenNext   = 50 + Math.random() * 40;
@@ -621,12 +673,18 @@ goldenEl.addEventListener('click', () => {
 });
 
 /* ============================================================
-   13. GAME LOOP
+   14. GAME LOOP
    ============================================================ */
 let last = performance.now();
 let saveTimer = 0;
-let lastCpsText = '';
-let lastCpkText = '';
+
+let lastCountText = '';
+let lastTotalText = '';
+let lastCpsText   = '';
+let lastCpkText   = '';
+let lastClicksTxt = '';
+let lastSynText   = '';
+let lastSynVisible = false;
 
 function loop(now){
   const dt = Math.min((now - last) / 1000, 1);
@@ -639,27 +697,51 @@ function loop(now){
     state.total   += gain;
   }
 
-  const shown = Math.floor(state.cookies);
-  if (shown !== displayedCookies){
-    countEl.textContent = fmt(shown);
-    displayedCookies = shown;
+  const countText = fmt(Math.floor(state.cookies));
+  if (countText !== lastCountText){
+    countEl.textContent = countText;
+    lastCountText = countText;
+  }
+
+  const totalText = fmt(Math.floor(state.total));
+  if (totalText !== lastTotalText){
+    totalEl.textContent = totalText;
+    lastTotalText = totalText;
   }
 
   const cpsText = fmtShort(rate);
-  if (cpsText !== lastCpsText){ cpsEl.textContent = cpsText; lastCpsText = cpsText; }
+  if (cpsText !== lastCpsText){
+    cpsEl.textContent = cpsText;
+    lastCpsText = cpsText;
+  }
 
-  const cpkText = fmt(state.clickPower);
-  if (cpkText !== lastCpkText){ cpkEl.textContent = cpkText; lastCpkText = cpkText; }
+  const perClick = state.clickPower + rate * state.clickSyn;
+  const cpkText = fmt(perClick);
+  if (cpkText !== lastCpkText){
+    cpkEl.textContent = cpkText;
+    lastCpkText = cpkText;
+  }
 
-  totalEl.textContent  = fmt(Math.floor(state.total));
-  clicksEl.textContent = state.clicks.toLocaleString('en-US');
+  const clicksText = state.clicks.toLocaleString('en-US');
+  if (clicksText !== lastClicksTxt){
+    clicksEl.textContent = clicksText;
+    lastClicksTxt = clicksText;
+  }
 
-  const synGain = state.cps * state.clickSyn;
+  const synGain = rate * state.clickSyn;
   if (synGain > 0){
-    synRow.style.display = 'flex';
-    synValEl.textContent = fmt(synGain);
-  } else if (synRow.style.display !== 'none'){
+    if (!lastSynVisible){
+      synRow.style.display = 'flex';
+      lastSynVisible = true;
+    }
+    const synText = fmt(synGain);
+    if (synText !== lastSynText){
+      synValEl.textContent = synText;
+      lastSynText = synText;
+    }
+  } else if (lastSynVisible){
     synRow.style.display = 'none';
+    lastSynVisible = false;
   }
 
   if (state.cookies >= nextThreshold) updateTree();
@@ -678,7 +760,7 @@ function loop(now){
 }
 
 /* ============================================================
-   14. SAVE / LOAD
+   15. SAVE / LOAD
    ============================================================ */
 function save(){
   try {
@@ -708,20 +790,27 @@ $('reset').addEventListener('click', () => {
   if (!confirm('Reset ALL progress?')) return;
   localStorage.removeItem(SAVE_KEY);
   state = { cookies:0, total:0, clicks:0, levels:{}, clickPower:1, cps:0, clickSyn:0 };
-  displayedCookies = -1;
+  lastCountText = '';
+  lastTotalText = '';
   lastCpsText = '';
   lastCpkText = '';
+  lastClicksTxt = '';
+  lastSynText = '';
+  lastBakeryKey = '';
+  lastBakeryCount = 0;
   for (const k in nodeCache) nodeCache[k] = null;
   updateTree();
+  updateBakery();
   toast('Progress reset');
 });
 
 window.addEventListener('beforeunload', save);
 
 /* ============================================================
-   15. GO
+   16. GO
    ============================================================ */
 load();
 recalcStats();
 updateTree();
+updateBakery();
 requestAnimationFrame(loop);
